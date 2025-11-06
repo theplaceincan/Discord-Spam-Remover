@@ -1,7 +1,6 @@
 # Detects and handles spam messages in UNLV discord servers
 # Written on 11/4/2025 by GitHub/theplaceincan
 import json
-
 import discord
 from datetime import datetime
 from discord.ext import commands
@@ -10,7 +9,6 @@ from dotenv import load_dotenv
 import os
 from typing import List, cast
 from openai import AsyncOpenAI, RateLimitError
-# from openai.resources.containers.files import content
 from openai.types.chat import (
     ChatCompletionMessageParam,
     ChatCompletionSystemMessageParam,
