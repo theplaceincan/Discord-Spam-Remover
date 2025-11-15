@@ -30,6 +30,12 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
+message_handler = logging.FileHandler(filename='SpamRemover_deleted.log', encoding='utf-8', mode='a')
+message_handler.setLevel(logging.INFO)
+message_logger = logging.getLogger('deleted_messages')
+message_logger.addHandler(message_handler)
+message_logger.setLevel(logging.INFO)
+
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 OPENAI_MODEL = "gpt-4o-mini"
@@ -132,13 +138,26 @@ def check_if_possible_spam(message):
         return True
 
     # If message has sus words, check
-    scam_keywords = [
-        "first come first serve", "dm me", "free", "giveaway", "loan", "grant",
-        "cashapp", "venmo", "crypto", "airdrop", "investment", "quick money",
-        "i’m giving out", "perfect condition", "limited time", "urgent",
+    scam_patterns = [
+        r'\bdm\b',  # matches "DM" as standalone word
+        r'\bgiving?\s+out\b',  # matches "give out" or "giving out"
+        r'\bfree\b',
+        r'\bgiveaway\b',
+        r'\bloan\b',
+        r'\bgrant\b',
+        r'\bcashapp\b',
+        r'\bvenmo\b',
+        r'\bcrypto\b',
+        r'\bairdrop\b',
+        r'\binvestment\b',
+        r'\bquick\s+money\b',
+        r'\bperfect\s+condition\b',
+        r'\blimited\s+time\b',
+        r'\burgent\b',
+        r'\bfirst\s+come\s+first\s+serve\b',
     ]
-    if any(k in lower for k in scam_keywords):
-        print("Possible scam, scammy words.")
+    if any(re.search(pattern, lower) for pattern in scam_patterns):
+        print("Possible scam, scammy words")
         return True
 
     # If trusted user, skip
@@ -236,6 +255,11 @@ async def on_message(message):
                 f"{message.author.mention} You have been timed out for {TIMEOUT_DURATION.total_seconds() // 60} minutes "
                 f"for sending too many suspicious messages. Please slow down."
             )
+            message_logger.info(f"SPAM DETECTED | User: {message.author.name} ({message.author.id}) | "
+                                f"Channel: {message.channel.name} | "
+                                f"Account Age: {account_age_days(message.author)} days | "
+                                f"Server Age: {member_join_age_days(message.author)} days | "
+                                f"Content: {message.content}")
             await message.delete()
             user_spam_attempts[user_id].clear()
             metrics_data["filtered_locally"] += 1 # API call not wasted
@@ -258,11 +282,16 @@ async def on_message(message):
         user_spam_detected[user_id] += 1
 
         try:
+            message_logger.info(f"SPAM DETECTED | User: {message.author.name} ({message.author.id}) | "
+                                f"Channel: {message.channel.name} | "
+                                f"Account Age: {account_age_days(message.author)} days | "
+                                f"Server Age: {member_join_age_days(message.author)} days | "
+                                f"Content: {message.content}")
             await message.delete()
             if user_spam_detected[user_id] == 1:
                 await message.channel.send(
                     f"{message.author.mention} Your message was removed as spam."
-                    f"Further violations will lead to a timeout.."
+                    f" Further violations will lead to a timeout."
                 )
             else:
                 timeout_mins = 10 * user_spam_detected[user_id] # increases timeout length
