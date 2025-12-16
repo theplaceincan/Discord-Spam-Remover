@@ -116,11 +116,11 @@ def check_if_possible_spam(message):
 
     # If @everyone or @here, check
     if '@everyone' in content or '@here' in content:
-        if len(message.author.roles) > 2:
-            print("Mass mention likely from trusted user, likely an announcement")
-            return False
-        print("Possible scam, mass mention")
-        return True
+        if not message.author.guild_permissions.mention_everyone:
+            print("Possible scam, unauthorized mass mention")
+            return True
+        print("Mass mention from authorized user")
+        return False
 
     # If it has links, then must check if spam
     if LINK_RE.search(content):
@@ -139,8 +139,8 @@ def check_if_possible_spam(message):
 
     # If message has sus words, check
     scam_patterns = [
-        r'\bdm\b',  # matches "DM" as standalone word
-        r'\bgiving?\s+out\b',  # matches "give out" or "giving out"
+        r'\bdm\b',
+        r'\bgiving?\s+out\b',
         r'\bfree\b',
         r'\bgiveaway\b',
         r'\bloan\b',
@@ -151,10 +151,18 @@ def check_if_possible_spam(message):
         r'\bairdrop\b',
         r'\binvestment\b',
         r'\bquick\s+money\b',
-        r'\bperfect\s+condition\b',
+        r'\bperfect\s+(condition|health|shape)\b',
         r'\blimited\s+time\b',
         r'\burgent\b',
-        r'\bfirst\s+come\s+first\s+serve\b',
+        r'\bfirst\s+come\b',
+        r'\bstrictly\s+first\s+come\b',
+        r'\bcan\'?t\s+afford\b',
+        r'\bin\s+need\s+of\b',
+        r'\bgot\s+a\s+new\b',
+        r'\binterested\b.*\bdm\b',
+        r'\bcharger.*\bfree\b',
+        r'\bmacbook.*\bfree\b',
+        r'\bcamera.*\bgiving\b',
     ]
     if any(re.search(pattern, lower) for pattern in scam_patterns):
         print("Possible scam, scammy words")
