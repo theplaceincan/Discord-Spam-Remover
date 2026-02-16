@@ -261,7 +261,8 @@ async def on_message(message):
             await message.author.timeout(TIMEOUT_DURATION, reason="Spam rate limit exceeded")
             await message.channel.send(
                 f"{message.author.mention} You have been timed out for {TIMEOUT_DURATION.total_seconds() // 60} minutes "
-                f"for sending too many suspicious messages. Please slow down."
+                f"for sending too many suspicious messages. Please slow down.",
+                delete_after=10
             )
             message_logger.info(f"SPAM DETECTED | User: {message.author.name} ({message.author.id}) | "
                                 f"Channel: {message.channel.name} | "
@@ -299,7 +300,8 @@ async def on_message(message):
             if user_spam_detected[user_id] == 1:
                 await message.channel.send(
                     f"{message.author.mention} Your message was removed as spam."
-                    f" Further violations will lead to a timeout."
+                    f" Further violations will lead to a timeout.",
+                    delete_after=10
                 )
             else:
                 timeout_mins = 10 * user_spam_detected[user_id] # increases timeout length
@@ -310,7 +312,7 @@ async def on_message(message):
                 logging.info(f"Deleted spam from {message.author}: {message.content}")
         except discord.errors.Forbidden:
             print("Can't delete message or timeout user - insufficient permissions")
-            await message.channel.send(f"{message.author.mention} Your message was flagged as spam.")
+            await message.channel.send(f"{message.author.mention} Your message was flagged as spam.", delete_after=10)
         except Exception as e:
             print(f"Error deleting message: {e}")
 
