@@ -52,6 +52,11 @@ MAX_SUS_MESSAGES = 5
 TIME_WINDOW = 60 # sec
 TIMEOUT_DURATION = timedelta(minutes=10)
 
+IGNORED_ROLE_IDS = {
+    695164448381468752, # officers
+    696925003156947024, # admins
+}
+
 # ------- Metrics -------
 METRICS_FILE = "SpamRemoverMetrics.json"
 
@@ -91,6 +96,10 @@ def print_metrics():
         print(f"{'='*50}")
 
 # ------- Functions -------
+
+# Check if user has special roles to ignore
+def member_has_ignored_role(member: discord.Member) -> bool:
+    return any(role.id in IGNORED_ROLE_IDS for role in member.roles)
 
 # Checks age of account
 def account_age_days(member: discord.Member):
@@ -222,6 +231,11 @@ async def on_ready():
 async def on_message(message):
     # Ignore messages from our bot
     if message.author == bot.user:
+        return
+
+    # Ignore if user has special role
+    if isinstance(message.author, discord.Member) and member_has_ignored_role(message.author):
+        await bot.process_commands(message)
         return
 
     print("Message detected: " + message.content)
