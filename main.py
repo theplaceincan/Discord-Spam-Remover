@@ -18,6 +18,7 @@ from openai.types.chat import (
 import re
 from collections import defaultdict
 from datetime import timedelta
+import time
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
@@ -359,4 +360,13 @@ async def show_metrics(ctx):
     else:
         await ctx.send("No messages processed yet")
 
-bot.run(token, log_handler=handler, log_level=logging.INFO)
+retry_delay = 60
+print("Starting bot...")
+while True:
+    try:
+        bot.run(token, log_handler=handler, log_level=logging.INFO)
+    except Exception as e:
+        print(f"Bot crashed: {e}")
+        print(f"Retrying in {retry_delay} seconds...")
+        time.sleep(retry_delay)
+        retry_delay = min(retry_delay * 2, 900)
